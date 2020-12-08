@@ -11,12 +11,12 @@ import com.microsoft.jenkins.acr.commands.QueueTaskCommand;
 import com.microsoft.jenkins.acr.commands.scm.GitSCMCommand;
 import com.microsoft.jenkins.acr.commands.scm.LocalSCMCommand;
 import com.microsoft.jenkins.acr.commands.scm.TarballSCMCommand;
-import com.microsoft.jenkins.acr.common.Platform;
 import com.microsoft.jenkins.acr.common.DockerTaskRequest;
-import com.microsoft.jenkins.acr.util.Utils;
+import com.microsoft.jenkins.acr.common.Platform;
 import com.microsoft.jenkins.acr.common.scm.SCMRequest;
 import com.microsoft.jenkins.acr.service.AzureContainerRegistry;
 import com.microsoft.jenkins.acr.service.AzureStorageAppendBlob;
+import com.microsoft.jenkins.acr.util.Utils;
 import com.microsoft.jenkins.azurecommons.command.CommandState;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -24,8 +24,8 @@ import hudson.model.Run;
 import hudson.model.TaskListener;
 import org.junit.*;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
+import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -197,7 +197,7 @@ public class QuickTaskContextTest {
 
     private void mockAzureService(DockerTaskRequest request) throws Exception {
         PowerMockito.mockStatic(AzureContainerRegistry.class);
-        PowerMockito.when(AzureContainerRegistry.getInstance()).thenReturn(registry);
+        PowerMockito.when(AzureContainerRegistry.getInstance()).thenAnswer((Answer) invocation -> registry);
         PowerMockito.when(registry.queueTaskRequest("resourcegroup", "name", request))
                 .thenReturn("build-id-mock");
         PowerMockito.when(registry.getLog("resourcegroup", "name", "build-id-mock"))

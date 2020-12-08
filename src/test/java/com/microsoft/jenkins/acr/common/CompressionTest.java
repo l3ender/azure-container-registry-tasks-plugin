@@ -173,7 +173,6 @@ public class CompressionTest {
     }
 
 
-
     private File prepareFiles(String name, String[] files) throws IOException {
         File file = new File(getFilename(name));
         file.mkdir();

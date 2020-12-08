@@ -18,6 +18,7 @@ import lombok.Getter;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.stubbing.Answer;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
@@ -59,7 +60,7 @@ public class LocalSCMCommandTest extends AbstractSCMTest<LocalSCMCommandTest.Req
 
     private void mockUploadRequest(String url, String path) {
         PowerMockito.mockStatic(AzureContainerRegistry.class);
-        PowerMockito.when(AzureContainerRegistry.getInstance()).thenReturn(containerRegistry);
+        PowerMockito.when(AzureContainerRegistry.getInstance()).thenAnswer((Answer) invocation -> containerRegistry);
         UploadRequest uploadRequest = new UploadRequest(url, path);
         PowerMockito.when(containerRegistry.getUploadUrl(resourceGroup, acr)).thenReturn(uploadRequest);
     }
