@@ -18,19 +18,17 @@ import hudson.model.Item;
 import javax.naming.AuthenticationException;
 
 public final class AzureHelper {
-    private static AzureHelper instance;
-    private static Azure client;
+    private Azure client;
 
     private AzureHelper() {
     }
 
     public static AzureHelper getInstance() {
-        instance = instance == null ? new AzureHelper() : instance;
-        return instance;
+        return SingletonInstance.getInstance();
     }
 
-    public AzureHelper auth(TokenCredentialData token) {
-        AzureHelper.client = AzureClientFactory.getClient(token, new AzureClientFactory.Configurer() {
+    private AzureHelper auth(TokenCredentialData token) {
+        client = AzureClientFactory.getClient(token, new AzureClientFactory.Configurer() {
             @Override
             public Azure.Configurable configure(Azure.Configurable configurable) {
                 return configurable
@@ -43,10 +41,10 @@ public final class AzureHelper {
     }
 
     public String getSubscription() {
-        if (AzureHelper.client == null) {
+        if (client == null) {
             return "";
         }
-        return AzureHelper.client.subscriptionId();
+        return client.subscriptionId();
     }
 
     public AzureHelper auth(Item owner, String credentialId) {
@@ -69,6 +67,18 @@ public final class AzureHelper {
                     String.format(Messages.error_cannotFindCred(), owner, credentialId));
         }
         return TokenCredentialData.deserialize(credential.serializeToTokenData());
+    }
+
+    private static final class SingletonInstance {
+        private static final AzureHelper INSTANCE = new AzureHelper();
+
+        private SingletonInstance() {
+
+        }
+
+        public static AzureHelper getInstance() {
+            return INSTANCE;
+        }
     }
 }
 

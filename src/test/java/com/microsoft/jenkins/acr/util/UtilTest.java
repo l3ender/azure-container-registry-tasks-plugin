@@ -24,8 +24,10 @@ public class UtilTest {
         DockerTaskRequest request = DockerTaskRequest.builder()
                 .platform(new Platform("Linux", "ARM", "V6"))
                 .localDir("gitrepo")
-                .buildArguments(new BuildArgument[]{
-                        new BuildArgument("key", "secret", false)
+                .buildArguments(new ArrayList<BuildArgument>() {
+                    {
+                        add(new BuildArgument("key", "secret", false));
+                    }
                 })
                 .imageNames(imageList)
                 .noCache(false)

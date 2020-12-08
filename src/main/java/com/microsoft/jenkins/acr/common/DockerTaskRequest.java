@@ -76,7 +76,7 @@ public class DockerTaskRequest extends AbstractRequest {
      * The collection of build arguments to be used.
      */
     @Getter
-    private BuildArgument[] buildArguments;
+    private List<BuildArgument> buildArguments;
 
     /**
      * The value of this property indicates whether the image cache is enabled

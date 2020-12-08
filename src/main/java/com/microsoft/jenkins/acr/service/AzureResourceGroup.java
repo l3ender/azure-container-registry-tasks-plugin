@@ -12,14 +12,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 public final class AzureResourceGroup extends AzureService {
-    private static AzureResourceGroup instance;
 
     private AzureResourceGroup() {
     }
 
     public static AzureResourceGroup getInstance() {
-        instance = instance == null ? new AzureResourceGroup() : instance;
-        return instance;
+        return SingletonInstance.getInstance();
     }
 
     public Collection<String> listResourceGroupNames() {
@@ -29,5 +27,17 @@ public final class AzureResourceGroup extends AzureService {
             result.add(group.name());
         }
         return result;
+    }
+
+    private static final class SingletonInstance {
+        private static final AzureResourceGroup INSTANCE = new AzureResourceGroup();
+
+        private SingletonInstance() {
+
+        }
+
+        public static AzureResourceGroup getInstance() {
+            return INSTANCE;
+        }
     }
 }
