@@ -28,8 +28,6 @@ import java.util.Map;
 
 public final class AzureContainerRegistry extends AzureService {
 
-    private static AzureContainerRegistry instance;
-
     private AzureContainerRegistry() {
     }
 
@@ -151,7 +149,18 @@ public final class AzureContainerRegistry extends AzureService {
     }
 
     public static AzureContainerRegistry getInstance() {
-        instance = instance == null ? new AzureContainerRegistry() : instance;
-        return instance;
+        return SingletonInstance.INSTANCE;
     }
+
+    private static final class SingletonInstance {
+        private static final AzureContainerRegistry INSTANCE = new AzureContainerRegistry();
+
+        private SingletonInstance() {
+        }
+
+        public static AzureContainerRegistry getInstance() {
+            return INSTANCE;
+        }
+    }
+
 }

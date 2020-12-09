@@ -188,13 +188,13 @@ public class QuickTaskBuilder extends Builder implements SimpleBuildStep {
         }
     }
 
-    private BuildArgument[] getBuildArgsArray() {
+    private List<BuildArgument> getBuildArgsArray() {
         List<BuildArgument> list = getBuildArgs();
         if (list == null || list.size() == 0) {
-            return new BuildArgument[0];
+            return new ArrayList();
         }
 
-        return list.toArray(new BuildArgument[list.size()]);
+        return list;
     }
 
     /**

@@ -9,3 +9,7 @@
 
 # Version 0.6.2, 2019-01-08
 * Fix security vulnerability
+
+# Version 0.6.4, 2020-12-03
+* Move document to GitHub
+* Dependency upgrade
