@@ -8,7 +8,7 @@
         <relativePath />
     </parent>
     <artifactId>azure-container-registry-tasks</artifactId>
-    <version>0.6.4</version>
+    <version>0.6.5-SNAPSHOT</version>
     <packaging>hpi</packaging>
     <properties>
         <java.level>8</java.level>
@@ -55,7 +55,7 @@
         <developerConnection>scm:git:git@github.com:jenkinsci/azure-container-registry-tasks-plugin.git
         </developerConnection>
         <url>https://github.com/jenkinsci/azure-container-registry-tasks-plugin</url>
-        <tag>azure-container-registry-tasks-0.6.4</tag>
+        <tag>azure-container-registry-tasks-0.6.0</tag>
     </scm>
     <repositories>
         <repository>
