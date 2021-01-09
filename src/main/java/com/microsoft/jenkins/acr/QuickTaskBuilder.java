@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import com.microsoft.azure.management.containerregistry.Architecture;
@@ -23,6 +24,7 @@ import com.microsoft.jenkins.acr.service.AzureHelper;
 import com.microsoft.jenkins.acr.service.AzureResourceGroup;
 import com.microsoft.jenkins.acr.util.Util;
 import hudson.AbortException;
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -155,7 +157,7 @@ public class QuickTaskBuilder extends Builder implements SimpleBuildStep {
                 .gitPath(getGitPath())
                 .localDir(StringUtils.trimToEmpty(getLocal()))
                 .tarball(getTarball())
-                .imageNames(Util.toStringList(getImageNames()))
+                .imageNames(getExpandedImageNames(run, listener))
                 .platform(new Platform(getOs(), getArchitecture(), getVariant()))
                 .buildArguments(getBuildArgsArray())
                 .dockerFilePath(getDockerfile())
@@ -186,6 +188,19 @@ public class QuickTaskBuilder extends Builder implements SimpleBuildStep {
         } else {
             listener.getLogger().println(Messages.context_finished());
         }
+    }
+
+    /**
+     * Transforms image names containing environment variables to images with variables expanded.
+     * Names without variables are left unmodified. If variables are not found they are not replaced.
+     * @see {@link Run#getEnvironment(TaskListener)}
+     * @see {@link EnvVars#expand(String)}
+     */
+    private List<String> getExpandedImageNames(Run<?, ?> run, TaskListener listener)
+            throws IOException, InterruptedException {
+        List<String> inputNames = Util.toStringList(getImageNames());
+        EnvVars env = run.getEnvironment(listener);
+        return inputNames.stream().map(str -> env.expand(str)).collect(Collectors.toList());
     }
 
     private List<BuildArgument> getBuildArgsArray() {
