@@ -5,17 +5,22 @@
 
 package com.microsoft.jenkins.acr.common;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.apache.commons.lang.StringUtils;
+import org.hamcrest.Matchers;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
 import com.microsoft.jenkins.acr.common.compression.CompressibleFileImpl;
 import com.microsoft.jenkins.acr.common.compression.Compression;
 import com.microsoft.jenkins.acr.util.Utils;
-import org.apache.commons.lang.StringUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.Assert;
-
-import java.io.File;
-import java.io.IOException;
 
 public class CompressionTest {
     private static String workspace = "compression_test";
@@ -64,20 +69,6 @@ public class CompressionTest {
         Assert.assertEquals(file.fileList()[0], source.getAbsolutePath());
     }
 
-//    @Test
-//    public void compressionWithIgnore() throws IOException {
-//        File source = prepareSource(getFilename("a.txt"));
-//        File ignore = prepareSource(getFilename("b.txt"));
-//        String tarball = getFilename("a.tar.gz");
-//        Compression.CompressedFile file = CompressibleFileImpl.compressToFile(tarball)
-//                .withIgnoreList(new String[]{ignore.getAbsolutePath()})
-//                .withFile(source.getAbsolutePath())
-//                .compress();
-//        Assert.assertTrue(new File(tarball).exists());
-//        Assert.assertEquals(file.fileList().length, 1);
-//        Assert.assertEquals(file.fileList()[0], source.getAbsolutePath());
-//    }
-
     @Test
     public void compressionWithNonExistFile() throws IOException {
         File source = new File(getFilename("a.txt"));
@@ -113,6 +104,37 @@ public class CompressionTest {
     }
 
     @Test
+    public void compressionIgnoringGitDirectories() throws IOException {
+        File source = prepareFiles("source", new String[]{
+                "dir/",
+                "dir/a.txt",
+                "dir/b.txt",
+                ".git/",
+                "directory/",
+                "directory/a.txt",
+                "directory/b.txt",
+                "directory/.git"
+        });
+
+        String tarball = getFilename("a.tar.gz");
+        Compression.CompressedFile file = CompressibleFileImpl.compressToFile(tarball)
+                .withIgnoreList(null)
+                .withDirectory(source.getAbsolutePath())
+                .compress();
+        Assert.assertTrue(new File(tarball).exists());
+        Assert.assertEquals(file.fileList().length, 6);
+        List<String> files = getFilesWithoutSourcePath(source.getAbsolutePath(), file.fileList());
+        Assert.assertThat(files, Matchers.containsInAnyOrder(
+                "dir",
+                "dir/a.txt",
+                "dir/b.txt",
+                "directory",
+                "directory/a.txt",
+                "directory/b.txt"
+        ));
+    }
+
+    @Test
     public void compressionWithDirectoryIgnoreDir() throws IOException {
         File source = prepareFiles("source", new String[]{
                 "dir/",
@@ -132,10 +154,16 @@ public class CompressionTest {
                 .compress();
         Assert.assertTrue(new File(tarball).exists());
         Assert.assertEquals(file.fileList().length, 3);
+        List<String> files = getFilesWithoutSourcePath(source.getAbsolutePath(), file.fileList());
+        Assert.assertThat(files, Matchers.containsInAnyOrder(
+                "directory",
+                "directory/a.txt",
+                "directory/b.txt"
+        ));
     }
 
     @Test
-    public void compressionWithDirectoryIgnoreFile() throws IOException {
+    public void compressionWithDirectoryIgnoreDirContents() throws IOException {
         File source = prepareFiles("source", new String[]{
                 "dir/",
                 "dir/a.txt",
@@ -149,11 +177,234 @@ public class CompressionTest {
 
         String tarball = getFilename("a.tar.gz");
         Compression.CompressedFile file = CompressibleFileImpl.compressToFile(tarball)
-                .withIgnoreList(new String[]{"!dir/a.txt", "dir/**"})
+                .withIgnoreList(new String[]{"dir/*"})
+                .withDirectory(source.getAbsolutePath())
+                .compress();
+        Assert.assertTrue(new File(tarball).exists());
+        Assert.assertEquals(file.fileList().length, 3);
+        List<String> files = getFilesWithoutSourcePath(source.getAbsolutePath(), file.fileList());
+        Assert.assertThat(files, Matchers.containsInAnyOrder(
+                "directory",
+                "directory/a.txt",
+                "directory/b.txt"
+        ));
+    }
+
+    @Test
+    public void compressionWithIgnoreFile() throws IOException {
+        File source = prepareFiles("source", new String[]{
+                "dir/",
+                "dir/a.txt",
+                "dir/b.txt",
+                ".git/",
+                "directory/",
+                "directory/a.txt",
+                "directory/b.txt",
+                "directory/.git"
+        });
+
+        String tarball = getFilename("a.tar.gz");
+        Compression.CompressedFile file = CompressibleFileImpl.compressToFile(tarball)
+                .withIgnoreList(new String[]{"dir/a.txt"})
                 .withDirectory(source.getAbsolutePath())
                 .compress();
         Assert.assertTrue(new File(tarball).exists());
         Assert.assertEquals(file.fileList().length, 5);
+        List<String> files = getFilesWithoutSourcePath(source.getAbsolutePath(), file.fileList());
+        Assert.assertThat(files, Matchers.containsInAnyOrder(
+                "dir",
+                "dir/b.txt",
+                "directory",
+                "directory/a.txt",
+                "directory/b.txt"
+        ));
+    }
+
+    @Test
+    public void compressionWithDirectoryIgnoreAndFileExcluded() throws IOException {
+        File source = prepareFiles("source", new String[]{
+                "dir/",
+                "dir/a.txt",
+                "dir/b.txt",
+                ".git/",
+                "directory/",
+                "directory/a.txt",
+                "directory/b.txt",
+                "directory/.git"
+        });
+
+        String tarball = getFilename("a.tar.gz");
+        Compression.CompressedFile file = CompressibleFileImpl.compressToFile(tarball)
+                .withIgnoreList(new String[]{"dir/**", "!dir/a.txt"})
+                .withDirectory(source.getAbsolutePath())
+                .compress();
+        Assert.assertTrue(new File(tarball).exists());
+        Assert.assertEquals(file.fileList().length, 5);
+        List<String> files = getFilesWithoutSourcePath(source.getAbsolutePath(), file.fileList());
+        Assert.assertThat(files, Matchers.containsInAnyOrder(
+                "dir",
+                "dir/a.txt",
+                "directory",
+                "directory/a.txt",
+                "directory/b.txt"
+        ));
+    }
+
+    @Test
+    public void compressionWithIgnoreAll() throws IOException {
+        File source = prepareFiles("source", new String[]{
+                "dir/",
+                "dir/a.txt",
+                "dir/b.txt",
+                "dir/nesteddir/",
+                "dir/nesteddir/a.txt",
+                "dir/nesteddir/b.txt",
+                ".git/",
+                "a.txt",
+                "b.txt",
+                "directory/",
+                "directory/a.txt",
+                "directory/b.txt",
+                "directory/.git"
+        });
+
+        String tarball = getFilename("a.tar.gz");
+        Compression.CompressedFile file = CompressibleFileImpl.compressToFile(tarball)
+                .withIgnoreList(new String[]{ "*" })
+                .withDirectory(source.getAbsolutePath())
+                .compress();
+        Assert.assertTrue(new File(tarball).exists());
+        Assert.assertEquals(file.fileList().length, 0);
+    }
+
+    @Test
+    public void compressionWithIgnoreAllExludingDirectory() throws IOException {
+        File source = prepareFiles("source", new String[]{
+                "dir/",
+                "dir/a.txt",
+                "dir/b.txt",
+                ".git/",
+                "a.txt",
+                "b.txt",
+                "directory/",
+                "directory/a.txt",
+                "directory/b.txt",
+                "directory/.git"
+        });
+
+        String tarball = getFilename("a.tar.gz");
+        Compression.CompressedFile file = CompressibleFileImpl.compressToFile(tarball)
+                .withIgnoreList(new String[]{ "*", "!dir/**" })
+                .withDirectory(source.getAbsolutePath())
+                .compress();
+        Assert.assertTrue(new File(tarball).exists());
+        Assert.assertEquals(file.fileList().length, 3);
+        List<String> files = getFilesWithoutSourcePath(source.getAbsolutePath(), file.fileList());
+        Assert.assertThat(files, Matchers.containsInAnyOrder(
+                "dir",
+                "dir/a.txt",
+                "dir/b.txt"
+        ));
+    }
+
+    @Test
+    public void compressionWithIgnoreAllExludingDirectoryWithNested() throws IOException {
+        File source = prepareFiles("source", new String[]{
+                "dir/",
+                "dir/a.txt",
+                "dir/b.txt",
+                "dir/nesteddir/",
+                "dir/nesteddir/a.txt",
+                "dir/nesteddir/b.txt",
+                ".git/",
+                "a.txt",
+                "b.txt",
+                "directory/",
+                "directory/a.txt",
+                "directory/b.txt",
+                "directory/.git"
+        });
+
+        String tarball = getFilename("a.tar.gz");
+        Compression.CompressedFile file = CompressibleFileImpl.compressToFile(tarball)
+                .withIgnoreList(new String[]{ "*", "!dir/" })
+                .withDirectory(source.getAbsolutePath())
+                .compress();
+        Assert.assertTrue(new File(tarball).exists());
+        Assert.assertEquals(file.fileList().length, 6);
+        List<String> files = getFilesWithoutSourcePath(source.getAbsolutePath(), file.fileList());
+        Assert.assertThat(files, Matchers.containsInAnyOrder(
+                "dir",
+                "dir/a.txt",
+                "dir/b.txt",
+                "dir/nesteddir",
+                "dir/nesteddir/a.txt",
+                "dir/nesteddir/b.txt"
+        ));
+    }
+
+    @Test
+    public void compressionWithIgnoreAllExludingFile() throws IOException {
+        File source = prepareFiles("source", new String[]{
+                "dir/",
+                "dir/a.txt",
+                "dir/b.txt",
+                ".git/",
+                "a.txt",
+                "b.txt",
+                "directory/",
+                "directory/a.txt",
+                "directory/b.txt",
+                "directory/.git"
+        });
+
+        String tarball = getFilename("a.tar.gz");
+        Compression.CompressedFile file = CompressibleFileImpl.compressToFile(tarball)
+                .withIgnoreList(new String[]{ "*", "!dir/a.txt" })
+                .withDirectory(source.getAbsolutePath())
+                .compress();
+        Assert.assertTrue(new File(tarball).exists());
+        Assert.assertEquals(file.fileList().length, 2);
+        List<String> files = getFilesWithoutSourcePath(source.getAbsolutePath(), file.fileList());
+        Assert.assertThat(files, Matchers.containsInAnyOrder(
+                "dir",
+                "dir/a.txt"
+        ));
+    }
+
+    @Test
+    public void compressionWithIgnoreAllExludingDirectoryAndFile() throws IOException {
+        File source = prepareFiles("source", new String[]{
+                "dir/",
+                "dir/a.txt",
+                "dir/b.txt",
+                ".git/",
+                "a.txt",
+                "b.txt",
+                "directory/",
+                "directory/a.txt",
+                "directory/b.txt",
+                "directory/.git"
+        });
+
+        String tarball = getFilename("a.tar.gz");
+        Compression.CompressedFile file = CompressibleFileImpl.compressToFile(tarball)
+                .withIgnoreList(new String[]{ "*", "!dir/**", "!a.txt" })
+                .withDirectory(source.getAbsolutePath())
+                .compress();
+        Assert.assertTrue(new File(tarball).exists());
+        Assert.assertEquals(file.fileList().length, 4);
+        List<String> files = getFilesWithoutSourcePath(source.getAbsolutePath(), file.fileList());
+        Assert.assertThat(files, Matchers.containsInAnyOrder(
+                "dir",
+                "dir/a.txt",
+                "dir/b.txt",
+                "a.txt"
+        ));
+    }
+
+    private List<String> getFilesWithoutSourcePath(String absolutePath, String[] files) {
+        return Arrays.asList(files).stream().map(file -> file.replace(absolutePath + "/", "")).collect(Collectors.toList());
     }
 
     private File prepareSource(String filename, String content) throws IOException {

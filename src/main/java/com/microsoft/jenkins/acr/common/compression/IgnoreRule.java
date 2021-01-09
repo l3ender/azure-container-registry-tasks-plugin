@@ -25,10 +25,10 @@ public class IgnoreRule {
 
         this.ignore = isIgnore;
 
-        String[] tokens = rule.split(Constants.FILE_SPERATE);
+        String[] tokens = rule.split(Constants.FILE_SPERATE, -1);
         for (int i = 0; i < tokens.length; i++) {
             String token = tokens[i];
-            if (token.equals("**")) {
+            if (token.equals("**") || (token.equals("") && i == tokens.length - 1)) {
                 tokens[i] = ".*";
             } else {
                 tokens[i] = token.replaceAll("\\*", "[^/]*")
@@ -36,5 +36,10 @@ public class IgnoreRule {
             }
         }
         this.pattern = "^" + StringUtils.join(tokens, '/') + "$";
+    }
+
+    @Override
+    public String toString() {
+        return "'" + pattern + "' ignored? " + ignore;
     }
 }
