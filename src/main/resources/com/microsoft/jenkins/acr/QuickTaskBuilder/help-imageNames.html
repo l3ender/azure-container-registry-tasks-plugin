@@ -3,7 +3,20 @@
   ~ Licensed under the MIT License. See License.txt in the project root for license information.
   -->
 <div>
+    <p>
     After Azure Container Registry finishes building image, it pushes the image to registry with tags provided.
     Single Built image can be pushed with multiple repositories and tags.
+    </p>
+    <p>
+    Environment variables may be used in tag names - they will be replaced at build time. Examples:
+    </p>
+    <ul>
+        <li><code>repository:${ENV_VARIABLE}</code></li>
+        <li><code>repository:$ENV_VARIABLE</code></li>
+        <li><code>$ENV_VARIABLE:$ENV_VARIABLE</code></li>
+        <li><code>$ENV_VARIABLE</code></li>
+    </ul>
+    <p>
     If no image name provided, Azure Container Registry **<b>WILL NOT</b>** push any image to registry after building.
+    </p>
 </div>
